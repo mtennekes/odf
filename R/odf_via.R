@@ -1,25 +1,25 @@
-#' @export
-odf_via <- function(lat) {
-  as_odf_via(lat)
+# @export
+List <- function(lat) {
+  as_List(lat)
 }
 
-#' @export
-as_odf_via <- function(x) {
-  structure(x, class = "odf_via")
+# @export
+as_List <- function(x) {
+  structure(x, class = "List")
 }
 
-#' @export
-c.odf_via <- function(x, ...) {
-  as_odf_via(NextMethod())
+# @export
+c.List <- function(x, ...) {
+  as_List(NextMethod())
 }
 
-#' @export
-`[.odf_via` <- function(x, i) {
-  as_odf_via(NextMethod())
+# @export
+`[.List` <- function(x, i) {
+  as_List(NextMethod())
 }
 
-#' @export
-format.odf_via <- function(x, ...) {
+# @export
+format.List <- function(x, ...) {
   via2chr(x)
 }
 
@@ -36,25 +36,38 @@ chr2via <- function(x) {
       as.integer(unlist(strsplit(v, split = ",", fixed = TRUE)))
     }
   })
-  odf_via(res)
+  List(res)
 }
 
 add_odvia <- function(od) {
-  od$odvia <- odf_via(mapply(c, od$orig, od$via, od$dest, SIMPLIFY = FALSE))
+  od$odvia <- List(mapply(function(...) {
+    args <- list(...)
+    if (is.factor(args[[1]])) {
+      lvls <- levels(args[[1]])
+      x <- factor(do.call(c, args), levels = 1:length(lvls), labels = lvls)
+    } else {
+      x <- do.call(c, args)
+    }
+    x
+  }, od$orig, od$via, od$dest, SIMPLIFY = FALSE))
   od
 }
 
 odf_add_place_names <- function(od, points) {
-  odvia <- odf_via(mapply(c, od$orig, od$via, od$dest, SIMPLIFY = FALSE))
+  odvia <- List(mapply(c, od$orig, od$via, od$dest, SIMPLIFY = FALSE))
   lapply(odvia, function(v) {
-    points$name[match(v, points$id)]
+    if (is.factor(od$orig)) {
+      points$name[v]
+    } else {
+      points$name[match(v, points$id)]
+    }
   })
 }
 
 
 
 #' @export
-print.odf_via <- function(x, ...) {
+print.List <- function(x, ...) {
   cat(format(x), sep = "\n")
   invisible(x)
 }

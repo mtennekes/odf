@@ -8,13 +8,15 @@ odf_add_lines(x, via = TRUE, angle = 1/24 * pi, crs = 3857,
   points_per_line = 100)
 }
 \arguments{
+\item{x}{odf object}
+
+\item{via}{use via routes}
+
 \item{angle}{angle}
 
 \item{crs}{crs}
 
 \item{points_per_line}{points_per_line}
-
-\item{odf}{odf object}
 }
 \description{
 Add lines (curved or straight) to an odf object

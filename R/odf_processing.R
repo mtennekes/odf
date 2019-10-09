@@ -31,7 +31,7 @@ odf_remove_type <- function(x, na.rm = FALSE) {
 odf_remove_via <- function(x, na.rm = FALSE) {
   od <- x$od
 
-  od$via <- odf_via(lapply(1:nrow(od), function(i) return(NULL)))
+  od$via <- List(lapply(1:nrow(od), function(i) return(NULL)))
 
   if ("type" %in% names(od)) {
     od2 <- od %>%
@@ -39,7 +39,7 @@ odf_remove_via <- function(x, na.rm = FALSE) {
       summarize(flow = sum(flow, na.rm = na.rm)) %>%
       ungroup()
     od3 <- od2 %>%
-      mutate(via = odf_via(lapply(1:nrow(od2), function(i) return(NULL)))) %>%
+      mutate(via = List(lapply(1:nrow(od2), function(i) return(NULL)))) %>%
       select(orig, dest, via, flow, type)
   } else {
     od2 <- od %>%
@@ -47,7 +47,7 @@ odf_remove_via <- function(x, na.rm = FALSE) {
       summarize(flow = sum(flow, na.rm = na.rm)) %>%
       ungroup()
     od3 <- od2 %>%
-      mutate(via = odf_via(lapply(1:nrow(od2), function(i) return(NULL)))) %>%
+      mutate(via = List(lapply(1:nrow(od2), function(i) return(NULL)))) %>%
       select(orig, dest, via, flow)
   }
   x$od <- od3

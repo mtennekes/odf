@@ -47,7 +47,7 @@ odf_flows <- function(x, by_type = TRUE, by_via = TRUE) {
 
 #' @rdname odf_flows
 #' @name odf_points
-odf_points <- function(odf) {
-  p <- odf$points
+odf_points <- function(x) {
+  p <- x$points
   select(p, name, geometry)
 }

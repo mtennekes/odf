@@ -7,7 +7,7 @@
 \usage{
 odf_flows(x, by_type = TRUE, by_via = TRUE)
 
-odf_points(odf)
+odf_points(x)
 }
 \arguments{
 \item{x}{odf object}

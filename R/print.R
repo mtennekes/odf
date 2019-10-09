@@ -2,7 +2,6 @@ print.odf <- function(x, ...) {
   cat("Origin-destination flows (odflows) object\n")
 
   od <- x$od
-  #od$via <- odf_via(od$via)
   p <- x$points
   r <- x$routes
 

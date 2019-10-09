@@ -4,7 +4,8 @@
 \alias{odf_heatmap}
 \title{Create heatmap}
 \usage{
-odf_heatmap(x, log = FALSE, n = 5, legend.title = "Flow")
+odf_heatmap(x, log = FALSE, n = 5, legend.title = "Flow",
+  base_size = 11, sort = FALSE)
 }
 \arguments{
 \item{x}{odf object}
@@ -14,6 +15,10 @@ odf_heatmap(x, log = FALSE, n = 5, legend.title = "Flow")
 \item{n}{number of classes (if !log)}
 
 \item{legend.title}{legend title}
+
+\item{base_size}{base size}
+
+\item{sort}{should the levels of o/d be sorted by total flow}
 }
 \description{
 Create heatmap

@@ -2,7 +2,8 @@
 #'
 #' Add lines (curved or straight) to an odf object
 #'
-#' @param odf odf object
+#' @param x odf object
+#' @param via use via routes
 #' @param angle angle
 #' @param crs crs
 #' @param points_per_line points_per_line
@@ -18,7 +19,6 @@ odf_add_lines <- function(x, via = TRUE, angle = 1/24*pi, crs = 3857, points_per
   p <- st_transform(x$points, crs = crs)
 
   od <- add_odvia(od)
-  #x$odvia <- odf_via(mapply(c, x$orig, x$via, x$dest, SIMPLIFY = FALSE))
 
   od$geometry <- st_sfc(lapply(od$odvia, create_lines, p, angle, points_per_line, via), crs = st_crs(p))
 

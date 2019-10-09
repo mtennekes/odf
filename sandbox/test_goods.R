@@ -6,8 +6,6 @@ points <- readRDS("~/pCloudDrive/flows_goods/data/throughput/centroids.rds")
 x <- odf(od, points, col_via = "via", col_flow = "value", col_type = "mode")
 
 
-
-
 # load tmap and set options
 library(tmap)
 tmap_mode("view")
