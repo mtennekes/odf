@@ -66,8 +66,8 @@ odf_heatmap <- function(x, log = FALSE, n = 5, legend.title = "Flow", base_size 
   g <- ggplot(od, aes(x=dest, y=orig, fill=flow)) +
     geom_tile() +
     scale_fill_viridis_d(legend.title, option = "B", direction = -1, na.translate = FALSE, drop=FALSE) +
-    scale_x_discrete("Origin") +
-    scale_y_discrete("Destination") +
+    scale_x_discrete("Destination") +
+    scale_y_discrete("Origin") +
     theme_gray(base_size = base_size) +
     theme(panel.background = element_rect(fill = "grey70"))
 

@@ -34,3 +34,4 @@ tm_shape(map_flows_sel) +
 g <- odf_heatmap(x, log = TRUE, base_size = 8, sort = TRUE)
 ggplot2::ggsave("sandbox/commuting_od.pdf", width = 20, height = 20)
 
+
