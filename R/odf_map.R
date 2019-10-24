@@ -5,11 +5,16 @@
 #' @param x odf object
 #' @param by_type create flows for different type separately
 #' @param by_via create flows for different via routes separately
+#' @param incl_total include total (in case \code{by_type = TRUE})
 #' @export
 #' @rdname odf_flows
 #' @name odf_flows
-odf_flows <- function(x, by_type = TRUE, by_via = TRUE) {
-  if (!by_type) x <- odf_remove_type(x)
+odf_flows <- function(x, by_type = TRUE, by_via = TRUE, incl_total = FALSE) {
+  if (!by_type) {
+    x <- odf_remove_type(x)
+  } else {
+    x <- odf_add_total(x)
+  }
   if (!by_via) x <- odf_remove_via(x)
   if (is.null(x$routes)) x <- odf_add_lines(x)
 
@@ -49,5 +54,5 @@ odf_flows <- function(x, by_type = TRUE, by_via = TRUE) {
 #' @name odf_points
 odf_points <- function(x) {
   p <- x$points
-  select(p, name, geometry)
+  select(p, name, id, geometry)
 }

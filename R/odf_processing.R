@@ -20,6 +20,23 @@ odf_remove_type <- function(x, na.rm = FALSE) {
   x
 }
 
+odf_add_total <- function(x, na.rm = FALSE) {
+  od <- x$od
+  od$type <- factor(as.character(od$type), levels = c("total", levels(od$type)))
+
+  od2 <- od %>%
+    mutate(VIA = via2chr(via)) %>%
+    group_by(orig, dest, VIA) %>%
+    summarize(flow = sum(flow, na.rm = na.rm)) %>%
+    ungroup() %>%
+    mutate(via = chr2via(VIA),
+           type = factor("total", levels = levels(od$type))) %>%
+    select(orig, dest, via, flow, type)
+  x$od <- rbind(od2, od)
+  x
+}
+
+
 #' Remove via points and aggregate odf accordingly
 #'
 #' Remove via points and aggregate odf accordingly

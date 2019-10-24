@@ -75,7 +75,6 @@ odf <- function(od, points, routes = NULL, col_orig = 1, col_dest = 2, col_flow 
 
   od[[col_orig]] <- check_od_col(od[[col_orig]], "orig")
   od[[col_dest]] <- check_od_col(od[[col_dest]], "dest")
-  od[[col_orig]] <- check_od_col(od[[col_orig]], "orig")
 
 
   if (!inherits(od[[col_flow]], "numeric")) stop("the column flow should be an integer/numeric")

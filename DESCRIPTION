@@ -10,6 +10,7 @@ License: What license is it under?
 Imports: 
     sf,
     dplyr,
+    tidyr,
     pillar,
     ggplot2
 Encoding: UTF-8

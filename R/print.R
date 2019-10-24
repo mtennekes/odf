@@ -24,9 +24,9 @@ printdf <- function(x, y) {
 
   if (is.null(x)) {
     cat(paste0("\n", y, ": not specified\n"))
-  } else if (nrow(x) > 10) {
-    cat(paste0("\n", y, " (", nrow(x), " rows, printing first 10 rows)\n"))
-    print(x[1:10,])
+  } else if (nrow(x) > 6) {
+    cat(paste0("\n", y, " (", nrow(x), " rows, printing first 6 rows)\n"))
+    print(x[1:6,])
   } else {
     cat(paste0("\n", y, "\n"))
     print(x)
