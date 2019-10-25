@@ -9,14 +9,14 @@
 #' @export
 #' @rdname odf_flows
 #' @name odf_flows
-odf_flows <- function(x, by_type = TRUE, by_via = TRUE, incl_total = FALSE) {
+odf_flows <- function(x, by_type = TRUE, by_via = TRUE, incl_total = FALSE, ...) {
   if (!by_type) {
     x <- odf_remove_type(x)
   } else {
     x <- odf_add_total(x)
   }
   if (!by_via) x <- odf_remove_via(x)
-  if (is.null(x$routes)) x <- odf_add_lines(x)
+  if (is.null(x$routes)) x <- odf_add_lines(x, ...)
 
   od <- x$od
   p <- x$points
