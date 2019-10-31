@@ -24,9 +24,17 @@ odf_flows <- function(x, by_type = TRUE, by_via = TRUE, incl_total = FALSE, ...)
 
   #p$name <- factor(p$name, levels = p$name)
 
+  if (any(od$orig == od$dest)) {
+    warning("od data contains values on diagonal, i.e. orig=dest. These are ignored")
+    od <- od %>% filter(orig!=dest)
+  }
+
+
+
   od <- add_odvia(od)
 
   via_labels <- odf_add_place_names(od, p)
+
 
   od2 <- od %>%
     mutate(label = sapply(via_labels, function(v) {

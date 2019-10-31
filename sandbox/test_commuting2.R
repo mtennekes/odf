@@ -22,20 +22,20 @@ map_points <- odf_points(x)
 map_flows <- odf_flows(x, by_type = FALSE, by_via = TRUE)
 
 map_flows2 <- map_flows %>%
-  mutate(orig_cls = ifelse(orig == "GM0363", "Adam",
+  mutate(orig_cls = ifelse(orig == "GM0363", "Amsterdam",
                ifelse(orig == "GM0599", "Rotterdam",
                ifelse(orig == "GM0518", "Den Haag",
-               ifelse(orig == "GM0344", "Utrecht", "Overig")))),
-         dest_cls = ifelse(dest == "GM0363", "Adam",
+               ifelse(orig == "GM0344", "Utrecht", "Other")))),
+         dest_cls = ifelse(dest == "GM0363", "Amsterdam",
                     ifelse(dest == "GM0599", "Rotterdam",
                     ifelse(dest == "GM0518", "Den Haag",
-                    ifelse(dest == "GM0344", "Utrecht", "Overig")))))
+                    ifelse(dest == "GM0344", "Utrecht", "Other")))))
 
 map_flows_sel <- map_flows2 %>% filter(flow >= 150)
 
 # show map with flows, and colors for the big 4
 tm_shape(map_flows_sel) +
-  tm_lines(lwd = "flow", scale = 10, col = "dest_cls", popup.vars = TRUE, palette = "Dark2") +
+  tm_lines(lwd = "flow", scale = 10, col = "dest_cls", popup.vars = TRUE, palette = "Dark2", title.col = "Destination") +
   tm_shape(map_points) +
   tm_dots()
 

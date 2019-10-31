@@ -11,9 +11,10 @@
 #' @param col_via col_via
 #' @param col_type col_type
 #' @param col_time col_time
+#' @param remove_diag remove_diag
 #' @export
 #' @import sf
-odf <- function(od, points, routes = NULL, col_orig = 1, col_dest = 2, col_flow = 3, col_via = NULL, col_type = NULL, col_time = NULL) {
+odf <- function(od, points, routes = NULL, col_orig = 1, col_dest = 2, col_flow = 3, col_via = NULL, col_type = NULL, col_time = NULL, remove_diag = FALSE) {
 
 
   # check points
@@ -130,7 +131,7 @@ odf <- function(od, points, routes = NULL, col_orig = 1, col_dest = 2, col_flow 
   }
 
   # remove o=d points
-  if (any(od$orig == od$dest)) {
+  if (any(od$orig == od$dest) && remove_diag) {
     warning("OD data contains inner flows (e.g. orig=dest), which are ignored")
     od <- od[!(od$orig == od$dest), ]
   }

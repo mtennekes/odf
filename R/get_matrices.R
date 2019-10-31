@@ -20,7 +20,7 @@ get_eucl_distances <- function(x) {
 #' @param directional directional
 #' @export
 #' @import tidyr
-get_flows <- function(x, directional = FALSE) {
+get_flows <- function(x, directional = TRUE) {
   p <- x$points
   m <- matrix(0, nrow = nrow(p), ncol = nrow(p), dimnames = list(p$id, p$id))
 
@@ -29,12 +29,12 @@ get_flows <- function(x, directional = FALSE) {
     group_by(orig,dest) %>%
     summarize(flow = sum(flow, na.rm = TRUE)) %>%
     ungroup() %>%
-    spread(orig, flow, drop = FALSE, fill = 0)
+    spread(dest, flow, drop = FALSE, fill = 0)
 
   m <- as.matrix(o2[, -1])
-  rownames(m) <- as.character(o2$dest)
+  rownames(m) <- as.character(o2$orig)
 
-  if (directional) {
+  if (!directional) {
     m <- m + t(m)
   }
   m
