@@ -56,7 +56,7 @@ data(NLD_muni)
 h <- sf::st_make_grid(NLD_muni, square = FALSE)
 
 # width powered
-map_flows_sel$flow2 <- map_flows_sel$flow ^ 1.2
+map_flows_sel$flow2 <- map_flows_sel$flow ^ 2
 tm_shape(map_flows_sel) +
   tm_lines(lwd = "flow2", scale = 10, col = "dest_cls", popup.vars = TRUE, palette = "Dark2") +
   tm_shape(map_points) +
