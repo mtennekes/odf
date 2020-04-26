@@ -85,7 +85,7 @@ map_flows2 <- odf_flows(x2, by_type = FALSE, by_via = FALSE) %>%
 map_points2 <- odf_points(x2)
 
 tm2 <- tm_shape(map_flows2) +
-  tm_lines(lwd = "flow", scale = 10) +
+  tm_lines(lwd = "flow", scale = 10, col = "dest_cls", popup.vars = TRUE, palette = pal, title.col = "Municipality") +
   tm_shape(map_points2) +
   tm_dots()
 
