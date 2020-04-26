@@ -96,6 +96,15 @@ odf <- function(od, points, routes = NULL, col_orig = 1, col_dest = 2, col_flow 
   }
   od[[col_via]] <- List(od[[col_via]])
 
+  od$VIA__2 <- List(od[[col_via]])
+
+
+  x <- list(1:10)
+  y <- List(1:10)
+  is.vector(x)
+
+
+
   if (has_type) {
     od <- od[, c(col_orig, col_dest, col_via, col_flow, col_type)]
     names(od) <- c("orig", "dest", "via", "flow", "type")

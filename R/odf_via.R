@@ -5,7 +5,7 @@ List <- function(lat) {
 
 # @export
 as_List <- function(x) {
-  structure(x, class = "List")
+  structure(x, class = c("List", "list"))
 }
 
 # @export
@@ -17,6 +17,7 @@ c.List <- function(x, ...) {
 `[.List` <- function(x, i) {
   as_List(NextMethod())
 }
+
 
 # @export
 format.List <- function(x, ...) {
@@ -57,7 +58,7 @@ odf_add_place_names <- function(od, points) {
   odvia <- List(mapply(c, od$orig, od$via, od$dest, SIMPLIFY = FALSE))
   lapply(odvia, function(v) {
     if (is.factor(od$orig)) {
-      points$name[v]
+      points$name[match(levels(od$orig)[v], points$id)]
     } else {
       points$name[match(v, points$id)]
     }

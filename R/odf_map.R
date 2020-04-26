@@ -16,7 +16,7 @@ odf_flows <- function(x, by_type = TRUE, by_via = TRUE, incl_total = FALSE, ...)
     x <- odf_add_total(x)
   }
   if (!by_via) x <- odf_remove_via(x)
-  if (is.null(x$routes)) x <- odf_add_lines(x, ...)
+  if (is.null(x$routes)) x <- odf_add_lines(x, via = by_via,...)
 
   od <- x$od
   p <- x$points
@@ -62,5 +62,22 @@ odf_flows <- function(x, by_type = TRUE, by_via = TRUE, incl_total = FALSE, ...)
 #' @name odf_points
 odf_points <- function(x) {
   p <- x$points
-  select(p, name, id, geometry)
+
+  orig <- x$od %>%
+    select(orig, flow) %>%
+    group_by(orig) %>%
+    summarize(flow_from = sum(flow))
+
+  dest <- x$od %>%
+    select(dest, flow) %>%
+    group_by(dest) %>%
+    summarize(flow_to = sum(flow))
+
+
+  suppressWarnings({
+    select(p, name, id, geometry) %>%
+    left_join(orig, by = c("id" = "orig")) %>%
+    left_join(dest, by = c("id" = "dest")) %>%
+    replace_na(list(flow_to = 0, flow_from = 0))
+  })
 }
