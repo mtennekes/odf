@@ -4,7 +4,7 @@
 \alias{get_flows}
 \title{Get flows as matrix}
 \usage{
-get_flows(x, directional = FALSE)
+get_flows(x, directional = TRUE)
 }
 \arguments{
 \item{x}{x}

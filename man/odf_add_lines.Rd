@@ -4,8 +4,16 @@
 \alias{odf_add_lines}
 \title{Add lines (curved or straight) to an odf object}
 \usage{
-odf_add_lines(x, via = TRUE, angle = 1/24 * pi, crs = 3857,
-  points_per_line = 100)
+odf_add_lines(
+  x,
+  via = TRUE,
+  angle = 1/24 * pi,
+  crs = 3857,
+  points_per_line = 100,
+  range = c(0, 1),
+  trunc = units::set_units(c(0, 0), "m"),
+  min_trunc_dist = units::set_units(5000, "m")
+)
 }
 \arguments{
 \item{x}{odf object}

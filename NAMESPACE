@@ -3,7 +3,7 @@
 S3method(print,List)
 export(get_eucl_distances)
 export(get_flows)
-export(odf)
+export(od)
 export(odf_flows)
 export(odf_heatmap)
 export(odf_remove_type)

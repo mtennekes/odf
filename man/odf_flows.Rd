@@ -5,7 +5,7 @@
 \alias{odf_points}
 \title{Create map from odf object}
 \usage{
-odf_flows(x, by_type = TRUE, by_via = TRUE)
+odf_flows(x, by_type = TRUE, by_via = TRUE, incl_total = FALSE, ...)
 
 odf_points(x)
 }
@@ -15,6 +15,8 @@ odf_points(x)
 \item{by_type}{create flows for different type separately}
 
 \item{by_via}{create flows for different via routes separately}
+
+\item{incl_total}{include total (in case \code{by_type = TRUE})}
 }
 \description{
 Create map from odf object

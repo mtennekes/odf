@@ -23,31 +23,37 @@ odf_add_lines <- function(x, via = TRUE, angle = 1/24*pi, crs = 3857, points_per
   len <- range[2] - range[1]
   points_per_line <- round(points_per_line / len)
 
-  od$geometry <- st_sfc(lapply(od$odvia, create_lines, p, angle, points_per_line, via), crs = st_crs(p))
+  od$geometry <- sf::st_sfc(lapply(od$odvia, create_lines, p, angle, points_per_line, via), crs = st_crs(p))
 
-  od <- st_as_sf(od[, c("orig", "dest", "via", "geometry")])
-
-
-  lns <- st_length(od)
-
-  d1 <- range[1] * lns
-  d2 <- range[2] * lns
-
-  delta <- d2 - d1
-
-  d1[delta > (min_trunc_dist + sum(trunc))] <- d1[delta > (min_trunc_dist + sum(trunc))] + trunc[1]
-  d2[delta > (min_trunc_dist + sum(trunc))] <- d2[delta > (min_trunc_dist + sum(trunc))] - trunc[2]
+  od <- sf::st_as_sf(od[, c("orig", "dest", "via", "geometry")])
 
 
-  range1 <- as.numeric(d1 / lns)
-  range2 <- as.numeric(d2 / lns)
+  if (range[1] != 0 || range[2] != 0) {
+    if (!all(sf::st_geometry_type(od$geometry) == "LINESTRING")) {
+      warning("range other than c(0, 1) only supports single lines (so no multiline-routes)")
+    } else {
+      lns <- st_length(od)
 
-  od$geometry <- st_sfc(mapply(function(l, r1, r2) {
-    lwgeom::st_linesubstring(l, r1, r2)
-  }, od$geometry, range1, range2, SIMPLIFY = FALSE), crs = st_crs(od))
+      d1 <- range[1] * lns
+      d2 <- range[2] * lns
+
+      delta <- d2 - d1
+
+      d1[delta > (min_trunc_dist + sum(trunc))] <- d1[delta > (min_trunc_dist + sum(trunc))] + trunc[1]
+      d2[delta > (min_trunc_dist + sum(trunc))] <- d2[delta > (min_trunc_dist + sum(trunc))] - trunc[2]
 
 
-  routes <- st_transform(od, crs = crs_original)
+      range1 <- as.numeric(d1 / lns)
+      range2 <- as.numeric(d2 / lns)
+
+      od$geometry <- sf::st_sfc(mapply(function(l, r1, r2) {
+        lwgeom::st_linesubstring(l, r1, r2)
+      }, od$geometry, range1, range2, SIMPLIFY = FALSE), crs = st_crs(od))
+    }
+  }
+
+
+  routes <- sf::st_transform(od, crs = crs_original)
 
   structure(list(od = od_original, points = p_original, routes = routes), class = "odf")
 }

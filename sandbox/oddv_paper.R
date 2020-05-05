@@ -77,8 +77,8 @@ oddv_save(tm1, "commuting_ODDV_map1.png")
 x2 <- x
 x2$od <- x2$od %>%
   filter(flow >= 500)
-x2$points <- x2$points %>%
-  filter(id %in% x2$od$orig | id %in% x2$od$dest)
+# x2$points <- x2$points %>%
+#   filter(id %in% x2$od$orig | id %in% x2$od$dest)
 
 map_flows2 <- odf_flows(x2, by_type = FALSE, by_via = FALSE) %>%
   add_city_class()
@@ -89,7 +89,7 @@ tm2 <- tm_shape(map_flows2) +
   tm_shape(map_points2) +
   tm_dots()
 
-oddv_save(tm2, "commuting_ODDV_map2.png")
+oddv_save(tm2, "commuting_ODDV_map2_v2.png")
 
 
 ############### map 2B
@@ -104,8 +104,8 @@ large_muni <- map_flows2 %>%
 x3 <- x2
 x3$od <- x3$od %>%
   filter(dest %in% large_muni$dest)
-x3$points <- x3$points %>%
-  filter(id %in% x3$od$orig | id %in% x3$od$dest)
+# x3$points <- x3$points %>%
+#   filter(id %in% x3$od$orig | id %in% x3$od$dest)
 
 
 map_flows3 <- odf_flows(x3, by_type = FALSE, by_via = TRUE)

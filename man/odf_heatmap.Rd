@@ -4,8 +4,14 @@
 \alias{odf_heatmap}
 \title{Create heatmap}
 \usage{
-odf_heatmap(x, log = FALSE, n = 5, legend.title = "Flow",
-  base_size = 11, sort = FALSE)
+odf_heatmap(
+  x,
+  log = FALSE,
+  n = 5,
+  legend.title = "Flow",
+  base_size = 11,
+  sort = FALSE
+)
 }
 \arguments{
 \item{x}{odf object}
