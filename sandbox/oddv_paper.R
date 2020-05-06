@@ -195,5 +195,9 @@ tm4 <- tm_shape(map_flows4) +
   tm_shape(map_points4) +
   tm_symbols(size = "size", scale = 1, popup.vars = TRUE, shape = "id", shapes = grobs, legend.shape.show = FALSE)
 
+tm <- tm4 + tm_view(set.view = c(4.721206+.025, 52.134765+.02, 10))
+tmp <- tempfile(fileext = ".html")
+tmap_save(tm, filename = tmp, selfcontained = FALSE)
 
-oddv_save(tm4, "commuting_ODDV_map3.png")
+
+oddv_save(tm4, "commuting_ODDV_map3_test.png")
