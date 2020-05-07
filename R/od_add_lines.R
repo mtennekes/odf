@@ -2,37 +2,46 @@
 #'
 #' Add lines (curved or straight) to an odf object
 #'
-#' @param x odf object
-#' @param via use via routes
+#' @param x od object
 #' @param angle angle
 #' @param crs crs
 #' @param points_per_line points_per_line
-odf_add_lines <- function(x, via = TRUE, angle = 1/24*pi, crs = 3857, points_per_line = 100, range = c(0, 1), trunc = units::set_units(c(0, 0), "m"), min_trunc_dist = units::set_units(5000, "m")) {
-  od_original <- x$od
-  p_original <- x$points
-  crs_original <- st_crs(p_original)
+od_add_lines <- function(x, angle = 1/24*pi, points_per_line = 100, range = c(0, 1), trunc = units::set_units(c(0, 0), "m"), min_trunc_dist = units::set_units(5000, "m"), overwrite.geometry = FALSE) {
 
-  x <- odf_remove_type(x) # since we do not distinguish between types
+  E <- x$E
+  U <- x$U
 
-  od <- x$od
+  col_i <- od_id(x)
+  col_o <- od_d(x)
+  col_d <- od_o(x)
 
-  p <- st_transform(x$points, crs = crs)
+  crs <- sf::st_crs(U)
 
-  od <- add_odvia(od)
+  if (inherits(E, "sf")) {
+    if (!overwrite.geometry) stop("E already has a sf column. Set overwrite.geometry = TRUE to overwrite it.")
+    sfcol <- attr(E, "sf_column")
+    E <- sf::st_drop_geometry(E)
+  } else {
+    sfcol <- "geometry"
+  }
 
   len <- range[2] - range[1]
   points_per_line <- round(points_per_line / len)
 
-  od$geometry <- sf::st_sfc(lapply(od$odvia, create_lines, p, angle, points_per_line, via), crs = st_crs(p))
+  pO <- st_geometry(U)[match(E[[col_o]], U[[col_i]])]
+  pD <- st_geometry(U)[match(E[[col_d]], U[[col_i]])]
 
-  od <- sf::st_as_sf(od[, c("orig", "dest", "via", "geometry")])
+  mpoints <- mapply(c, pO, pD, SIMPLIFY = FALSE)
 
+  sfc <- sf::st_sfc(lapply(mpoints, create_lines, angle, points_per_line), crs = crs)
+
+  #od$geometry <- sf::st_sfc(lapply(od$odvia, create_lines, p, angle, points_per_line, via), crs = st_crs(p))
 
   if (range[1] != 0 || range[2] != 0) {
-    if (!all(sf::st_geometry_type(od$geometry) == "LINESTRING")) {
+    if (!all(sf::st_geometry_type(sfc) == "LINESTRING")) {
       warning("range other than c(0, 1) only supports single lines (so no multiline-routes)")
     } else {
-      lns <- st_length(od)
+      lns <- sf::st_length(sfc)
 
       d1 <- range[1] * lns
       d2 <- range[2] * lns
@@ -46,28 +55,31 @@ odf_add_lines <- function(x, via = TRUE, angle = 1/24*pi, crs = 3857, points_per
       range1 <- as.numeric(d1 / lns)
       range2 <- as.numeric(d2 / lns)
 
-      od$geometry <- sf::st_sfc(mapply(function(l, r1, r2) {
+      sfc <- sf::st_sfc(mapply(function(l, r1, r2) {
         lwgeom::st_linesubstring(l, r1, r2)
-      }, od$geometry, range1, range2, SIMPLIFY = FALSE), crs = st_crs(od))
+      }, sfc, range1, range2, SIMPLIFY = FALSE), crs = crs)
     }
   }
 
+  E[[sfcol]] <- sfc
 
-  routes <- sf::st_transform(od, crs = crs_original)
+  if (!inherits(E, "sf")) E <- sf::st_as_sf(E)
 
-  structure(list(od = od_original, points = p_original, routes = routes), class = "odf")
+  x$E <- E
+  x
 }
 
 
-create_lines <- function(s, p, angle, points_per_line, via) {
-  l <- length(s)
-  ls <- if (via) {
-    1:(l-1)
-  } else {
-    unique(c(1, l-1))
-  }
-  res <- lapply(ls, function(i) {
-    co <- create_line(s[i], s[i+1], p, angle, points_per_line)
+create_lines <- function(mp, angle, points_per_line) {
+  co <- st_coordinates(mp)
+
+  nr <- nrow(co)
+
+  1:(nr-1L)
+
+
+  res <- lapply(1:(nr-1L), function(i) {
+    co <- create_line(co[i, ], co[i+1, ], angle, points_per_line)
   })
 
   if (length(res)==1) {
@@ -75,13 +87,9 @@ create_lines <- function(s, p, angle, points_per_line, via) {
   } else {
     st_multilinestring(res)
   }
-
 }
 
-create_line <- function(i, j, p, angle, points_per_line) {
-  p1 <- st_coordinates(p$geometry[p$id == i])
-  p2 <- st_coordinates(p$geometry[p$id == j])
-
+create_line <- function(p1, p2, angle, points_per_line) {
   x1 <- p1[1]
   y1 <- p1[2]
 

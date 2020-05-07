@@ -1,4 +1,7 @@
 get_od_endpoints <- function(E, U = NULL) {
+
+  if (!inherits(E, "sf")) stop("Either specify U, or let E be an sf object with lines.")
+
   origs <- E %>%
     group_by(get(od_o(E))) %>%
     slice(1L) %>%

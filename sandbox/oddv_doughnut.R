@@ -4,35 +4,16 @@ devtools::load_all("../tmap/")
 devtools::load_all()
 tmap_mode("view")
 
-###########################################################################################
-#### misc functions
-###########################################################################################
-oddv_save <- function(tm, file) {
-  tm <- tm + tm_view(set.view = c(4.721206+.025, 52.134765+.02, 10))
-  tmpf <- tempfile(fileext = ".html")
-  #browser()
-  tmap_save(tm, filename = tmpf, selfcontained = FALSE)
-  webshot::webshot(tmpf, file, zoom = 2, vwidth = 1000, vheight = 1000)
-}
-
 add_city_class <- function(mf) {
   mf %>%
-    mutate(orig_cls = factor(ifelse(orig == "GM0363", "Amsterdam",
-                             ifelse(orig == "GM0599", "Rotterdam",
-                             ifelse(orig == "GM0518", "Den Haag",
-                             ifelse(orig == "GM0344", "Utrecht", "other")))), levels = c("Amsterdam", "Rotterdam", "Den Haag", "Utrecht", "other")),
-           dest_cls = factor(ifelse(dest == "GM0363", "Amsterdam",
-                             ifelse(dest == "GM0599", "Rotterdam",
-                             ifelse(dest == "GM0518", "Den Haag",
-                             ifelse(dest == "GM0344", "Utrecht", "other")))), levels = c("Amsterdam", "Rotterdam", "Den Haag", "Utrecht", "other")))
-  # ifelse(dest == "GM0772", "Eindhoven",
-  # ifelse(dest == "GM0935", "Maastricht",
-  # ifelse(dest == "GM0202", "Arnhem",
-  # ifelse(dest == "GM0193", "Zwolle",
-  # ifelse(dest == "GM0153", "Enschede",
-  # ifelse(dest == "GM0106", "Assen",
-  # ifelse(dest == "GM0080", "Leeuwarden",
-  # ifelse(dest == "GM0014", "Groningen", "Other")))))))))))))
+    mutate(gm_from_cls = factor(ifelse(gm_from == "GM0363", "Amsterdam",
+                             ifelse(gm_from == "GM0599", "Rotterdam",
+                             ifelse(gm_from == "GM0518", "Den Haag",
+                             ifelse(gm_from == "GM0344", "Utrecht", "other")))), levels = c("Amsterdam", "Rotterdam", "Den Haag", "Utrecht", "other")),
+           gm_to_cls = factor(ifelse(gm_to == "GM0363", "Amsterdam",
+                             ifelse(gm_to == "GM0599", "Rotterdam",
+                             ifelse(gm_to == "GM0518", "Den Haag",
+                             ifelse(gm_to == "GM0344", "Utrecht", "other")))), levels = c("Amsterdam", "Rotterdam", "Den Haag", "Utrecht", "other")))
 }
 
 
@@ -47,15 +28,28 @@ points$geometry[points$id == "GM0599"] <- st_point(c(91437.09, 437561.29)) # edi
 
 # Create odf object
 #x <- odf(od, points, col_flow = "value")
-x <- odf(od, points, col_flow = "value", col_orig = "gm_to", col_dest = "gm_from")
+x <- od(od, points, col_orig = "gm_to", col_dest = "gm_from")
 
-x$od <- x$od %>%
-  filter(flow >= 500)
+x$U <- x$U %>%
+  sf::st_transform(3857) %>%
+  select(name, everything())
 
-# Create spatial objects
-map_flows <- odf_flows(x, by_type = FALSE, by_via = TRUE, angle = 0, range = c(.5, 1), trunc = units::set_units(c(500, 0), "m"), min_trunc_dist = units::set_units(1000, "m")) %>%
-  add_city_class()
-map_points <- odf_points(x)
+x$E <- x$E %>%
+  group_by(gm_from, gm_to) %>%
+  summarize(value = sum(value)) %>%
+  ungroup() %>%
+  filter(value >= 500) %>%
+  mutate(label = paste(x$U$name[match(gm_from, x$U$id)], "to", x$U$name[match(gm_to, x$U$id)])) %>%
+  add_city_class() %>%
+  select(label, everything())
+
+x <- od_add_lines(x, angle = 0, range = c(.5, 1), trunc = units::set_units(c(500, 0), "m"), min_trunc_dist = units::set_units(1000, "m"))
+
+
+x <- od_sum_out(x, "value")
+x <- od_sum_in(x, "value")
+
+
 
 # Define palette
 pal <- tmaptools::get_brewer_pal("Dark2", plot = F)[c(2,4,1,5,3)]
@@ -69,6 +63,8 @@ names(pal) <- c("Amsterdam", "Rotterdam", "Den Haag", "Utrecht", "other")
 #### grobs
 ###########################################################################################
 
+create_grobs <- function(x)
+
 
 df <- x$od %>%
   add_city_class()
@@ -79,13 +75,6 @@ grobs <- lapply(map_points$id, function(id) {
     summarize(flow = sum(flow)) %>%
     ungroup()
 
-  # #### PIE chart
-  # ggplotGrob(ggplot(df2, aes(x="", y=flow, fill = dest_cls)) +
-  #   geom_bar(stat="identity", width=1, size = 2, color = "white", show.legend = FALSE) +
-  #   geom_vline(xintercept = -.5, color = "white", size = 5 ) +
-  #   scale_fill_manual(values = pal) +
-  #   coord_polar("y", start=0) +
-  # theme_void())
 
   ggplotGrob(ggplot(df2, aes(x=2, y=flow, fill = dest_cls)) +
                geom_bar(stat="identity", width=1, size = ifelse(nrow(df2) == 1, 0, 2), color = "white", show.legend = FALSE) +
