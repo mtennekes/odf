@@ -1,15 +1,15 @@
 od_sum <- function(x, value, direction = c("in", "out"), name = paste(value, direction, sep = "_")) {
   E <- x$E
+  if (inherits(E, "sf")) E <- sf::st_drop_geometry(E)
   U <- x$U
 
   col_i <- od_id(x)
-  col_o <- od_d(x)
-  col_d <- od_o(x)
+  col_d <- od_d(x)
+  col_o <- od_o(x)
 
   if ("in" %in% direction) {
     name_in <- name[match("in", direction)]
     Ein <- E %>%
-      sf::st_drop_geometry() %>%
       group_by_at(vars(col_o)) %>%
       summarize(!!name_in := sum(!!sym(value))) %>%
       ungroup()
@@ -19,7 +19,6 @@ od_sum <- function(x, value, direction = c("in", "out"), name = paste(value, dir
   if ("out" %in% direction) {
     name_out <- name[match("out", direction)]
     Eout <- E %>%
-      sf::st_drop_geometry() %>%
       group_by_at(vars(col_d)) %>%
       summarize(!!name_out := sum(!!sym(value))) %>%
       ungroup()
