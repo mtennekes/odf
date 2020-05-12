@@ -6,14 +6,16 @@
 #' @param angle angle
 #' @param crs crs
 #' @param points_per_line points_per_line
-od_add_lines <- function(x, angle = 1/24*pi, points_per_line = 100, range = c(0, 1), trunc = units::set_units(c(0, 0), "m"), min_trunc_dist = units::set_units(5000, "m"), overwrite.geometry = FALSE) {
+od_add_lines <- function(x, angle = 1/24*pi, points_per_line = ifelse(angle == 0, 2, 100), range = c(0, 1), trunc = units::set_units(c(0, 0), "m"), min_trunc_dist = units::set_units(5000, "m"), overwrite.geometry = FALSE) {
+
+  od_is_valid(x)
 
   E <- x$E
   U <- x$U
 
   col_i <- od_id(x)
-  col_o <- od_d(x)
-  col_d <- od_o(x)
+  col_o <- od_o(x)
+  col_d <- od_d(x)
 
   crs <- sf::st_crs(U)
 
@@ -26,7 +28,7 @@ od_add_lines <- function(x, angle = 1/24*pi, points_per_line = 100, range = c(0,
   }
 
   len <- range[2] - range[1]
-  points_per_line <- round(points_per_line / len)
+  #points_per_line <- round(points_per_line / len)
 
   pO <- st_geometry(U)[match(E[[col_o]], U[[col_i]])]
   pD <- st_geometry(U)[match(E[[col_d]], U[[col_i]])]

@@ -1,0 +1,139 @@
+create_oddv_doughnuts <- function(x, highlighted, other = "other", pal, size_min = 20000, size_max = 250000, doughnut_scale = 1.5, flow_min = 500, flow_max = 20000, flow_scale = 10, set.view = c(4.746, 52.155, 10)) {
+  stopifnot(length(pal) == (length(highlighted) + 1L))
+  names(pal) <- c(highlighted, other)
+
+
+  ###########################################################################################
+  #### misc functions
+  ###########################################################################################
+
+  add_city_class <- function(col, levels, other) {
+    x <- match(col, levels)
+    x[is.na(x)] <- length(levels) + 1L
+
+    factor(x, levels = 1:(length(levels) + 1L), labels = c(levels, other))
+  }
+  create_grobs <- function(U, pal, scale = 1) {
+    if (inherits(U, "sf")) U <- sf::st_drop_geometry(U)
+    Ulong <- U %>%
+      select(!!(c("name", names(pal)))) %>%
+      pivot_longer(-name, names_to = "class", values_to = "value") %>%
+      replace_na(list(value = 0))
+
+    grobs <- lapply(U$name, function(nm) {
+      df <- Ulong %>%
+        filter(name == nm)
+      singleCat <- sum(df$value != 0) <= 1L
+      ggplotGrob(ggplot(df, aes(x=2, y=value, fill = class)) +
+                   geom_bar(stat="identity", width=1, size = ifelse(singleCat, 0, 2 * scale), color = "white", show.legend = FALSE) +
+                   geom_vline(xintercept = 2.5, color = "white", size = 5 * scale) +
+                   geom_rect(xmin = 0, xmax = .75, ymin = 0, ymax = sum(df$value), size = 0, color = "white", fill = "grey90") +
+                   geom_vline(xintercept = 1.5, color = "white", size = 5 * scale ) +
+                   scale_fill_manual(values = pal) +
+                   coord_polar("y", start=0) +
+                   xlim(.75, 2.5) +
+                   theme_void())
+    })
+    names(grobs) <- U$name
+    grobs
+  }
+
+
+  # transform to mercator (needed later to draw straight edges in interactive mode) and put name colunm first
+  x$U <- x$U %>%
+    sf::st_transform(3857) %>%
+    select(name, everything())
+
+  # create labels ("a to b") and add class_to variable (needed later to color edges)
+  x$E <- x$E %>%
+    filter(muni_from != muni_to) %>%
+    group_by(muni_from, muni_to) %>%
+    summarize(value = sum(value)) %>%
+    ungroup() %>%
+    mutate(value = as.integer(value),
+           name_from = x$U$name[match(muni_from, x$U$id)],
+           name_to = x$U$name[match(muni_to, x$U$id)],
+           label = paste(name_from, "to", name_to),
+           class_to = add_city_class(name_to, highlighted, other)) %>%
+    select(label, everything())
+
+  # calculate inflow and outflow
+  x <- od_sum_out(x, "value")
+  x <- od_sum_in(x, "value")
+
+  # filter out Waddeneilanden (except Texel) and set lowerbound to outflow (needed to determine size of doughnuts)
+  x$U <- x$U %>%
+    filter(value_out >= 130) %>%
+    mutate(size = pmin(size_max, pmax(size_min, value_out)))
+
+  x$E <- x$E %>%
+    filter(muni_from %in% x$U$id, muni_to %in% x$U$id)
+
+
+  uExtra <- x$E %>%
+    group_by(name_from) %>%
+    mutate(value = round(value / sum(value) * 100)) %>%
+    ungroup() %>%
+    mutate(value = replace(value, class_to =="other", NA)) %>%
+    group_by(name_from, class_to) %>%
+    summarize(value = sum(value)) %>%
+    ungroup() %>%
+    complete(name_from, class_to, fill = list(value = 0)) %>%
+    mutate(value = replace(value, name_from == as.character(class_to), NA)) %>%  #needed for the popups
+    pivot_wider(names_from = class_to, values_from = value) %>%
+    mutate(other = 100-rowSums(.[,-1], na.rm = TRUE))
+
+
+  x$U <- x$U %>%
+    left_join(uExtra, by = c("name" = "name_from"))
+
+  ###########################################################################################
+  #### create lines and doughnuts
+  ###########################################################################################
+
+  grobs <- create_grobs(x$U, pal, scale = .25)
+
+  # filter edges by flow
+  x$E <- x$E %>%
+    filter(value >= flow_min)
+
+  # create straight lines from midpoint to endpoints
+  x <- od_add_lines(x, angle = 0, range = c(.5, 1), trunc = units::set_units(c(500, 0), "m"), min_trunc_dist = units::set_units(1000, "m"))
+
+  ###########################################################################################
+  #### process data for popups
+  ###########################################################################################
+
+  vars <- c(highlighted, other)
+  names(vars) <- paste0("to_", c(highlighted, other))
+
+  repl <- function(x) ifelse(is.na(x), "n.a.", paste0(x, "%"))
+
+  lns <- x$E %>%
+    mutate(width = pmin(value, flow_max)) %>%
+    select(label, value, width, class_to)
+  pnts <- x$U %>%
+    rename(!!vars) %>%
+    rename(outflow = value_out,
+           inflow = value_in) %>%
+    mutate_at(names(vars), repl) %>%
+    select( !!c("name", "outflow", "inflow", "size", names(vars)))
+
+
+  ###########################################################################################
+  #### tmap
+  ###########################################################################################
+
+  tm <- tm_basemap(c("Esri.WorldGrayCanvas", "OpenStreetMap")) +
+    tm_shape(lns) +
+    tm_lines(lwd = "width", scale = flow_scale, col = "class_to", id = "label", popup.vars = c("value"), palette = pal, title.col = "Municipality", group = "Flows") +
+    tm_shape(pnts) +
+    tm_symbols(size = "size", scale = doughnut_scale, id = "name", popup.vars = c("inflow", "outflow", names(vars)),
+               shape = "name", shapes = grobs, legend.shape.show = FALSE, grob.dim = c(width = 48, height = 48, render.width = 96, render.height = 96),
+               group = "Doughnut charts") +
+    #tm_symbols(size = "size", scale = 1.5, id = "name", popup.vars = c("inflow", "outflow", names(vars)), group = "Doughnut charts") +
+    tm_view(set.view = set.view)
+  tm
+}
+
+
