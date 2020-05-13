@@ -1,4 +1,4 @@
-create_oddv_doughnuts <- function(x, highlighted, other = "other", pal, size_min = 20000, size_max = 250000, doughnut_scale = 1.5, flow_min = 500, flow_max = 20000, flow_scale = 10, set.view = c(4.746, 52.155, 10)) {
+create_oddv_doughnuts <- function(x, highlighted, other = "other", edges_direction = "in", doughnut_type = "out", pal, size_min = 20000, size_max = 250000, doughnut_scale = 1.5, flow_min = 500, flow_max = 20000, flow_scale = 10, view_args = NULLL) {
   stopifnot(length(pal) == (length(highlighted) + 1L))
   names(pal) <- c(highlighted, other)
 
@@ -38,6 +38,16 @@ create_oddv_doughnuts <- function(x, highlighted, other = "other", pal, size_min
     grobs
   }
 
+  doughnut_group_by <- ifelse(doughnut_type == "out", "name_from", "name_to")
+  edge_group_by <- ifelse(edges_direction == "out", "name_from", "name_to")
+  doughnut_size <- ifelse(doughnut_type == "out", "value_out", "value_in")
+
+  doughnut_class <- ifelse(doughnut_type == "out", "class_to", "class_from")
+  edge_class <- ifelse(edges_direction == "out", "class_from", "class_to")
+
+  edge_range <- if (edges_direction == "in") c(.5, 1) else c(0, .5)
+  edge_trunc <- if (edges_direction == "in") units::set_units(c(500, 0), "m") else units::set_units(c(0, 500), "m")
+
 
   # transform to mercator (needed later to draw straight edges in interactive mode) and put name colunm first
   x$U <- x$U %>%
@@ -54,6 +64,7 @@ create_oddv_doughnuts <- function(x, highlighted, other = "other", pal, size_min
            name_from = x$U$name[match(muni_from, x$U$id)],
            name_to = x$U$name[match(muni_to, x$U$id)],
            label = paste(name_from, "to", name_to),
+           class_from = add_city_class(name_from, highlighted, other),
            class_to = add_city_class(name_to, highlighted, other)) %>%
     select(label, everything())
 
@@ -63,29 +74,29 @@ create_oddv_doughnuts <- function(x, highlighted, other = "other", pal, size_min
 
   # filter out Waddeneilanden (except Texel) and set lowerbound to outflow (needed to determine size of doughnuts)
   x$U <- x$U %>%
-    filter(value_out >= 130) %>%
-    mutate(size = pmin(size_max, pmax(size_min, value_out)))
+    filter(!(name %in% c("Vlieland", "Terschelling",  "Ameland", "Schiermonnikoog"))) %>%
+    mutate(size = pmin(size_max, pmax(size_min, !!sym(doughnut_size))))
 
   x$E <- x$E %>%
     filter(muni_from %in% x$U$id, muni_to %in% x$U$id)
 
 
   uExtra <- x$E %>%
-    group_by(name_from) %>%
+    group_by(!!sym(doughnut_group_by)) %>%
     mutate(value = round(value / sum(value) * 100)) %>%
     ungroup() %>%
-    mutate(value = replace(value, class_to =="other", NA)) %>%
-    group_by(name_from, class_to) %>%
+    mutate(value = replace(value, !!sym(doughnut_class) =="other", NA)) %>%
+    group_by(!!sym(doughnut_group_by), !!sym(doughnut_class)) %>%
     summarize(value = sum(value)) %>%
     ungroup() %>%
-    complete(name_from, class_to, fill = list(value = 0)) %>%
-    mutate(value = replace(value, name_from == as.character(class_to), NA)) %>%  #needed for the popups
-    pivot_wider(names_from = class_to, values_from = value) %>%
+    complete(!!sym(doughnut_group_by), !!sym(doughnut_class), fill = list(value = 0)) %>%
+    mutate(value = replace(value, !!sym(doughnut_group_by) == as.character(!!sym(doughnut_class)), NA)) %>%  #needed for the popups
+    pivot_wider(names_from = !!sym(doughnut_class), values_from = value) %>%
     mutate(other = 100-rowSums(.[,-1], na.rm = TRUE))
 
 
   x$U <- x$U %>%
-    left_join(uExtra, by = c("name" = "name_from"))
+    left_join(uExtra, by = c("name" = doughnut_group_by))
 
   ###########################################################################################
   #### create lines and doughnuts
@@ -98,20 +109,21 @@ create_oddv_doughnuts <- function(x, highlighted, other = "other", pal, size_min
     filter(value >= flow_min)
 
   # create straight lines from midpoint to endpoints
-  x <- od_add_lines(x, angle = 0, range = c(.5, 1), trunc = units::set_units(c(500, 0), "m"), min_trunc_dist = units::set_units(1000, "m"))
+  x <- od_add_lines(x, angle = 0, range = edge_range, trunc = edge_trunc, min_trunc_dist = units::set_units(1000, "m"))
 
   ###########################################################################################
   #### process data for popups
   ###########################################################################################
 
   vars <- c(highlighted, other)
-  names(vars) <- paste0("to_", c(highlighted, other))
+  names(vars) <- paste0(ifelse(doughnut_type == "out", "to ", "from "), c(highlighted, other))
 
   repl <- function(x) ifelse(is.na(x), "n.a.", paste0(x, "%"))
 
   lns <- x$E %>%
     mutate(width = pmin(value, flow_max)) %>%
-    select(label, value, width, class_to)
+    select(label, value, width, !!sym(edge_class)) %>%
+    arrange(desc(value))
   pnts <- x$U %>%
     rename(!!vars) %>%
     rename(outflow = value_out,
@@ -126,14 +138,42 @@ create_oddv_doughnuts <- function(x, highlighted, other = "other", pal, size_min
 
   tm <- tm_basemap(c("Esri.WorldGrayCanvas", "OpenStreetMap")) +
     tm_shape(lns) +
-    tm_lines(lwd = "width", scale = flow_scale, col = "class_to", id = "label", popup.vars = c("value"), palette = pal, title.col = "Municipality", group = "Flows") +
+    tm_lines(lwd = "width", scale = flow_scale, col = edge_class, id = "label", popup.vars = "value", palette = pal, title.col = "Municipality", group = "Flows") +
     tm_shape(pnts) +
     tm_symbols(size = "size", scale = doughnut_scale, id = "name", popup.vars = c("inflow", "outflow", names(vars)),
                shape = "name", shapes = grobs, legend.shape.show = FALSE, grob.dim = c(width = 48, height = 48, render.width = 96, render.height = 96),
                group = "Doughnut charts") +
     #tm_symbols(size = "size", scale = 1.5, id = "name", popup.vars = c("inflow", "outflow", names(vars)), group = "Doughnut charts") +
-    tm_view(set.view = set.view)
+    do.call(tm_view, view_args)
   tm
 }
 
 
+filter_Limburg <- function(x, NL_muni_poly) {
+  LI_muni <- (NL_muni_poly %>%
+    st_drop_geometry() %>%
+    filter(NUTS3_name %in% c("Midden-Limburg", "Noord-Limburg")) %>%
+    select(id))$id
+  NL_muni <- (NL_muni_poly %>%
+                st_drop_geometry() %>%
+                filter(NUTS2_name != "Limburg (NL)") %>%
+                select(id))$id
+
+  x$U <- x$U %>%
+    mutate(id = replace(id, name=="Peel en Maas", "L"),
+           name = replace(name, name=="Peel en Maas", "Limburg (other)")) %>%
+    mutate(id = replace(id, name=="Eindhoven", "NL"),
+           name = replace(name, name=="Eindhoven", "Outside Limburg")) %>%
+    filter(!(id %in% LI_muni), !(id %in% NL_muni))
+
+  x$E <- x$E %>%
+    mutate(muni_from = case_when(muni_from %in% LI_muni ~ "L",
+                                 muni_from %in% NL_muni ~ "NL",
+                                 TRUE ~ muni_from),
+           muni_to = case_when(muni_to %in% LI_muni ~ "L",
+                                 muni_to %in% NL_muni ~ "NL",
+                                 TRUE ~ muni_to)) %>%
+    group_by(muni_from, muni_to, mode) %>%
+    summarize(value = sum(value))
+  x
+}

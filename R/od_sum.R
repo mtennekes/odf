@@ -10,7 +10,7 @@ od_sum <- function(x, value, direction = c("in", "out"), name = paste(value, dir
   if ("in" %in% direction) {
     name_in <- name[match("in", direction)]
     Ein <- E %>%
-      group_by_at(vars(col_o)) %>%
+      group_by_at(vars(col_d)) %>%
       summarize(!!name_in := sum(!!sym(value))) %>%
       ungroup()
   }
@@ -19,20 +19,20 @@ od_sum <- function(x, value, direction = c("in", "out"), name = paste(value, dir
   if ("out" %in% direction) {
     name_out <- name[match("out", direction)]
     Eout <- E %>%
-      group_by_at(vars(col_d)) %>%
+      group_by_at(vars(col_o)) %>%
       summarize(!!name_out := sum(!!sym(value))) %>%
       ungroup()
   }
 
   if ("in" %in% direction) {
     U <- U %>%
-      left_join(Ein, by = setNames(col_o, col_i)) %>%
+      left_join(Ein, by = setNames(col_d, col_i)) %>%
       mutate(!!name_in := replace_na(!!sym(name_in), 0))
   }
 
   if ("out" %in% direction) {
     U <- U %>%
-      left_join(Eout, by = setNames(col_d, col_i)) %>%
+      left_join(Eout, by = setNames(col_o, col_i)) %>%
       mutate(!!name_out := replace_na(!!sym(name_out), 0))
   }
 
