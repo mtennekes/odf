@@ -1,4 +1,4 @@
-create_oddv_doughnuts <- function(x, highlighted, other = "other", edges_direction = "in", doughnut_type = "out", pal, size_min = 20000, size_max = 250000, doughnut_scale = 1.5, flow_min = 500, flow_max = 20000, flow_scale = 10, view_args = NULLL) {
+create_oddv_doughnuts <- function(x, highlighted, other = "other", edges_direction = "in", doughnut_type = "out", pal, size_min = 20000, size_max = 250000, doughnut_scale = 1.5, flow_min = 500, flow_max = 20000, flow_scale = 10, view_args = NULL, clip = NULL) {
   stopifnot(length(pal) == (length(highlighted) + 1L))
   names(pal) <- c(highlighted, other)
 
@@ -58,7 +58,7 @@ create_oddv_doughnuts <- function(x, highlighted, other = "other", edges_directi
   x$E <- x$E %>%
     filter(muni_from != muni_to) %>%
     group_by(muni_from, muni_to) %>%
-    summarize(value = sum(value)) %>%
+    summarize(value = sum(value), show = show[1]) %>%
     ungroup() %>%
     mutate(value = as.integer(value),
            name_from = x$U$name[match(muni_from, x$U$id)],
@@ -121,15 +121,24 @@ create_oddv_doughnuts <- function(x, highlighted, other = "other", edges_directi
   repl <- function(x) ifelse(is.na(x), "n.a.", paste0(x, "%"))
 
   lns <- x$E %>%
+    filter(show) %>%
     mutate(width = pmin(value, flow_max)) %>%
     select(label, value, width, !!sym(edge_class)) %>%
     arrange(desc(value))
   pnts <- x$U %>%
+    filter(show) %>%
     rename(!!vars) %>%
     rename(outflow = value_out,
            inflow = value_in) %>%
     mutate_at(names(vars), repl) %>%
     select( !!c("name", "outflow", "inflow", "size", names(vars)))
+
+  # clip
+  if (!is.null(clip)) {
+    clip <- sf::st_transform(clip, 3857)
+    lns <- sf::st_intersection(lns, clip)
+    pnts <- sf::st_intersection(pnts, clip)
+  }
 
 
   ###########################################################################################
@@ -142,9 +151,10 @@ create_oddv_doughnuts <- function(x, highlighted, other = "other", edges_directi
     tm_shape(pnts) +
     tm_symbols(size = "size", scale = doughnut_scale, id = "name", popup.vars = c("inflow", "outflow", names(vars)),
                shape = "name", shapes = grobs, legend.shape.show = FALSE, grob.dim = c(width = 48, height = 48, render.width = 96, render.height = 96),
-               group = "Doughnut charts") +
-    #tm_symbols(size = "size", scale = 1.5, id = "name", popup.vars = c("inflow", "outflow", names(vars)), group = "Doughnut charts") +
-    do.call(tm_view, view_args)
+               group = "Doughnut charts")
+
+  if (!is.null(view_args)) tm <- tm + do.call(tm_view, view_args)
+
   tm
 }
 
@@ -160,10 +170,13 @@ filter_Limburg <- function(x, NL_muni_poly) {
                 select(id))$id
 
   x$U <- x$U %>%
-    mutate(id = replace(id, name=="Peel en Maas", "L"),
-           name = replace(name, name=="Peel en Maas", "Limburg (other)")) %>%
+    mutate(id = replace(id, name=="Venlo", "L"),
+           geometry = replace(geometry, name == "Venlo", sf::st_point(c(225000, 450000))),
+           name = replace(name, name=="Venlo", "Limburg (other)")) %>%
     mutate(id = replace(id, name=="Eindhoven", "NL"),
+           geometry = replace(geometry, name == "Eindhoven", sf::st_point(c(130000, 450000))),
            name = replace(name, name=="Eindhoven", "Outside Limburg")) %>%
+    mutate(show = !(id %in% c("L", "NL"))) %>%
     filter(!(id %in% LI_muni), !(id %in% NL_muni))
 
   x$E <- x$E %>%
@@ -174,6 +187,8 @@ filter_Limburg <- function(x, NL_muni_poly) {
                                  muni_to %in% NL_muni ~ "NL",
                                  TRUE ~ muni_to)) %>%
     group_by(muni_from, muni_to, mode) %>%
-    summarize(value = sum(value))
+    summarize(value = sum(value), show = show[1]) %>%
+    ungroup() %>%
+    mutate(show = !(muni_to %in% c("L", "NL")))
   x
 }
