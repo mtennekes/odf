@@ -141,6 +141,26 @@ create_oddv_doughnuts <- function(x, highlighted, other = "other", edges_directi
   }
 
 
+  set_precision <- function(x, precision = 4) {
+    sf::st_geometry(x) <- sf::st_as_sfc(lapply(sf::st_geometry(x), function(y) {
+      y[] <- round(y[], precision)
+      y
+    }))
+    x
+  }
+
+
+  lns <- lns %>%
+    sf::st_transform(4326) %>%
+    set_precision(4)
+
+
+  pnts <- pnts %>%
+    sf::st_transform(4326) %>%
+    set_precision(4)
+
+
+
   ###########################################################################################
   #### tmap
   ###########################################################################################
@@ -190,5 +210,48 @@ filter_Limburg <- function(x, NL_muni_poly) {
     summarize(value = sum(value), show = show[1]) %>%
     ungroup() %>%
     mutate(show = !(muni_to %in% c("L", "NL")))
+  x
+}
+
+filter_Noord <- function(x, NL_muni_poly) {
+  GF_muni <- (NL_muni_poly %>%
+                st_drop_geometry() %>%
+                filter(NUTS2_name %in% c("Groningen", "Friesland (NL)", "Drenthe")) %>%
+                select(id))$id
+  OG_muni <- (NL_muni_poly %>%
+                st_drop_geometry() %>%
+                filter(NUTS2_name %in% c("Overijssel", "Gelderland")) %>%
+                select(id))$id
+  NL_muni <- (NL_muni_poly %>%
+                st_drop_geometry() %>%
+                filter(!(NUTS2_name %in% c("Groningen", "Friesland (NL)", "Drenthe", "Overijssel", "Gelderland"))) %>%
+                select(id))$id
+
+
+  x$U <- x$U %>%
+    mutate(id = replace(id, name=="Zwolle", "OG"),
+           geometry = replace(geometry, name == "Zwolle", sf::st_point(c(250000, 400000))),
+           name = replace(name, name=="Zwolle", "Overijssel and Gelderland")) %>%
+    mutate(id = replace(id, name=="Utrecht", "NL"),
+           geometry = replace(geometry, name == "Utrecht", sf::st_point(c(100000, 400000))),
+           name = replace(name, name=="Utrecht", "West and south Netherlands")) %>%
+    mutate(id = replace(id, name=="Eindhoven", "NL2"),
+           geometry = replace(geometry, name == "Eindhoven", sf::st_point(c(-50000, 400000))),
+           name = replace(name, name=="Eindhoven", "West and south Netherlands")) %>%
+    mutate(show = !(id %in% c("OG", "NL", "NL2"))) %>%
+    filter(!(id %in% OG_muni), !(id %in% NL_muni))
+
+  x$E <- x$E %>%
+    mutate(muni_from = case_when(muni_from %in% OG_muni ~ "OG",
+                                 muni_from %in% NL_muni & muni_to != "GM0114" ~ "NL",
+                                 muni_from %in% NL_muni & muni_to == "GM0114" ~ "NL2",
+                                 TRUE ~ muni_from),
+           muni_to = case_when(muni_to %in% OG_muni ~ "OG",
+                               muni_to %in% NL_muni ~ "NL",
+                               TRUE ~ muni_to)) %>%
+    group_by(muni_from, muni_to, mode) %>%
+    summarize(value = sum(value), show = show[1]) %>%
+    ungroup() %>%
+    mutate(show = !(muni_to %in% c("OG", "NL", "NL2")))
   x
 }
