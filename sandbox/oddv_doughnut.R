@@ -28,11 +28,31 @@ highlighted_big4 <- c("Amsterdam", "Rotterdam", "Den Haag", "Utrecht")
 highlighted_brabant <- c("Eindhoven", "Tilburg", "Breda", "Den Bosch")
 highlighted_limburg <- c("Maastricht", "Heerlen", "Sittard-Geleen", "Outside Limburg")
 #highlighted_noord <- c("Groningen", "Leeuwarden", "Assen", "Heerenveen", "Emmen")
+highlighted_east <- c("Zwolle", "Enschede", "Apeldoorn", "Arnhem", "Nijmegen")
 highlighted_noord <- c("Groningen", "Leeuwarden", "Assen", "West and south Netherlands")
 
 # Define palette
 pal5 <- colorspace::qualitative_hcl(5, palette = "Dark3", c = 100, l = 50)[c(1,3,2,5,4)]
-pal6 <- colorspace::qualitative_hcl(6, palette = "Dark3", c = 100, l = 50)[c(1,3,2,5,6,4)]
+pal6 <- colorspace::qualitative_hcl(6, palette = "Dark3", c = 100, l = 50, h1 = 35)[c(1,3,2,5,6,4)]
+
+# align palettes on blue
+if (FALSE) {
+targetcol <- as.vector(col2rgb(pal5[5]))
+gdiff <- 100
+ga <- ""
+gi <- 0
+for (i in 1:360) {
+  a <- lapply(colorspace::qualitative_hcl(6, palette = "Dark3", c = 100, l = 50,h1=i), function(col) as.vector(col2rgb(col)))
+  dff <- abs(sapply(a, function(ai) {
+    sum(ai-targetcol)
+  }))
+  if (min(dff) < gdiff) {
+    ga <- a[which.min(dff)]
+    gdiff <- min(dff)
+    gi <- i
+  }
+}
+}
 
 
 x$U$show <- TRUE
@@ -61,6 +81,10 @@ tmNL_in_out <- create_oddv_doughnuts(x, highlighted_big4, pal = pal5, size_min =
 ## Brabant
 tmNB_in_out <- create_oddv_doughnuts(x, highlighted_brabant, pal = pal5, size_min = 5000, size_max = 35000, doughnut_scale = 1.5, flow_min = 500, flow_max = 5000, flow_scale = 15, view_args = list(set.view = c(5.2, 51.6, 10), set.zoom.limits = c(8,12)))
 
+## Oost
+tmNO_in_out <- create_oddv_doughnuts(x, highlighted_east, pal = pal6, size_min = 5000, size_max = 35000, doughnut_scale = 1.5, flow_min = 500, flow_max = 5000, flow_scale = 15, view_args = list(set.view = c(6.14, 52.17, 9), set.zoom.limits = c(8,12)))
+
+
 ## Limburg
 x_LI <- filter_Limburg(x, NL_muni_poly)
 LI_poly <- NL_muni_poly %>% filter(NUTS3_name == "Zuid-Limburg")
@@ -86,11 +110,11 @@ tmNN_in_out <- tm_shape(NN_poly) + tm_borders(col = "black") + create_oddv_dough
 
 
 # save
-
-tmap_save(tmNL_in_out, file = "local/Dutch_commuting_v2/indexNL.html", selfcontained = FALSE)
-tmap_save(tmNB_in_out, file = "local/Dutch_commuting_v2/indexNB.html", selfcontained = FALSE)
-tmap_save(tmL_in_out, file = "local/Dutch_commuting_v2/indexLI.html", selfcontained = FALSE)
-tmap_save(tmNN_in_out, file = "local/Dutch_commuting_v2/indexNN.html", selfcontained = FALSE)
+tmap_save(tmNL_in_out, file = "local/Dutch_commuting_v2/indexNL.html", in.iframe = TRUE, libdir = "index_files")
+tmap_save(tmNB_in_out, file = "local/Dutch_commuting_v2/indexNB.html", in.iframe = TRUE, libdir = "index_files")
+tmap_save(tmL_in_out, file = "local/Dutch_commuting_v2/indexLI.html", in.iframe = TRUE, libdir = "index_files")
+tmap_save(tmNN_in_out, file = "local/Dutch_commuting_v2/indexNN.html", in.iframe = TRUE, libdir = "index_files")
+tmap_save(tmNO_in_out, file = "local/Dutch_commuting_v2/indexNO.html", in.iframe = TRUE, libdir = "index_files")
 
 
 
