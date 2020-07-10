@@ -3,7 +3,7 @@ devtools::load_all("../tmaptools/")
 devtools::load_all("../tmap/")
 devtools::load_all()
 tmap_mode("view")
-source("sandbox/create_oddv_doughnuts.R")
+source("demo/NL_commuting/create_oddv_doughnuts.R")
 
 
 ###########################################################################################
