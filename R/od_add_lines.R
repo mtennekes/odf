@@ -4,8 +4,13 @@
 #'
 #' @param x od object
 #' @param angle angle
-#' @param crs crs
 #' @param points_per_line points_per_line
+#' @param range range
+#' @param trunc trunc
+#' @param min_trunc_dist = min_trunc_dist
+#' @param overwrite.geometry overwrite.geometry
+#' @param points_per_line points_per_line
+#' @export
 od_add_lines <- function(x, angle = 1/24*pi, points_per_line = ifelse(angle == 0, 2, 100), range = c(0, 1), trunc = units::set_units(c(0, 0), "m"), min_trunc_dist = units::set_units(5000, "m"), overwrite.geometry = FALSE) {
 
   od_is_valid(x)

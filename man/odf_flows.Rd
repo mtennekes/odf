@@ -2,21 +2,18 @@
 % Please edit documentation in R/odf_map.R
 \name{odf_flows}
 \alias{odf_flows}
+\alias{od_flows}
 \alias{odf_points}
 \title{Create map from odf object}
 \usage{
-odf_flows(x, by_type = TRUE, by_via = TRUE, incl_total = FALSE, ...)
+od_flows(x, ...)
 
 odf_points(x)
 }
 \arguments{
 \item{x}{odf object}
 
-\item{by_type}{create flows for different type separately}
-
-\item{by_via}{create flows for different via routes separately}
-
-\item{incl_total}{include total (in case \code{by_type = TRUE})}
+\item{...}{arguments passed on to od_add_lines}
 }
 \description{
 Create map from odf object
