@@ -1,3 +1,12 @@
+#' Checck validity of od objects
+#'
+#' Checks whether an od object is valid. See details.
+#'
+#' A valid `od` object should: contain two list items, `U` and `E`, and three attributes `od_id`, `od_orig`, and `od_dest`. The values of these attributes are column names of `U` (`od_id`) and `E` (`od_orig` and `od_dest`). `U` should be an `sf` object (points or polygons), and `E` a data.frame (optionally an sf object (lines).
+#'
+#' @param x od object
+#' @param verbose should messages be returned about possible invalidations? TRUE by default.
+#' @export
 od_is_valid <- function(x, verbose = TRUE) {
   name <- deparse(substitute(x))[1]
 
@@ -21,8 +30,8 @@ od_is_valid <- function(x, verbose = TRUE) {
     if (!inherits(U, "sf")) {
       if (verbose) message("U is not an sf object")
       FALSE
-    } else if (!all(st_geometry_type(U) == "POINT")) {
-      if (verbose) message("geometry type of U should be POINT")
+    } else if (!all(st_geometry_type(U) %in% c("POINT", "POLYGON", "MULTIPOINT", "MULTIPOLYGON"))) {
+      if (verbose) message("geometry type of U should be (MULTI)POINT or (MULTI)POLYGON")
       FALSE
     } else if (!inherits(E, "data.frame")) {
       if (verbose) message("E is not a data.frame")

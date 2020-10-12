@@ -60,7 +60,7 @@ precheck_E <- function(E, col_orig, col_dest) {
 
 check_U <- function(U, col_id) {
   if (!inherits(U, "sf")) stop("U should be an sf object")
-  if (!all(st_geometry_type(U) == "POINT")) stop("The geometry type of U should be POINT")
+  if (!all(st_geometry_type(U) %in% c("POINT", "POLYGON", "MULTIPOINT", "MULTIPOLYGON"))) stop("The geometry type of U should be (MULTI)POINT or (MULTIPOLYGON")
   nms <- names(U)
 
   if (is.numeric(col_id)) col_id <- nms[col_id]
