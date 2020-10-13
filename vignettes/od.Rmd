@@ -44,23 +44,25 @@ A realistic option is to merge this package with the `od` package, which also co
 
 ## Class `od`
 
-The class `od` is a list of two elements, `U` for nodes and `E` for edges.
+The fundamental concept behind the `od` class is a graph structure $G = (U, E)$, where $U$ denotes the nodes and $E$ the edges. 
+In our implementation, an object of class `od` is a list of two elements, `U` for nodes and `E` for edges.
 
-The list element `U` is an `sf` data.frame (i.e. a data frame with a geometry column), where each record correspond to an origin or destination point (or zone),and where the geometry column contains the corresponding points or polygons.
-It is important that one column in `U`should exist that contains the key values, by which origins and destinations can be identified.
-The key column is stored as an attribute named `od_id` in the `od` object.
+The list element `U` is an `sf` data.frame (i.e. a data frame with a geometry column), where each record correspond to an origin or destination point (or zone), and where the geometry column contains the corresponding points or polygons.
+It is important that one column in `U` should exist that contains key values by which origins and destinations can be identified.
+The key column name is stored as an attribute named `od_id` in the `od` object.
 
 The list element `E` is a data.frame object that contains data about the edges, i.e. the movements.
-The only required columns in `E`are the origin and the destination identifier.
-Those are matched with the key column in $U$.
-The origin and destination columns in `E`are stores as attributes `od_orig` and `od_dest` in the `od` object.
-Optionally, `E` can be an `sf` object that contains the lines between origins and destinations.
-This package contains a few functions to add lines automatically (with various options: straight lines, curved lines, half-lines).
-When actual movement routes are available, those can obviously be used as well.
+The only required columns in `E` are the origin and the destination identifier.
+Each of these origin and destination ids should occur in the key column of `U`.
+The names of the origin and destination columns are stored as attributes `od_orig` and `od_dest` in the `od` object.
 
-Note that users are add other columns to `U`and `E`. For aggregated OD data, `E`typically contains the flow counts, and grouping variables (e.g. the mode of transport).
+Optionally, `E` can be an `sf` object that contains the polylines between origins and destinations.
+These polylines can be the actual movement routes, simple straight lines, or anything in between.
+This package contains a function to add lines automatically, with various options.
 
-In this package example is contained about Dutch commuting flows.
+Note that users are free to add other columns to `U` and `E`. For aggregated OD data, `E` typically contains flow counts, and grouping variables such as mode of transport.
+
+An example is contained in this package about Dutch commuting flows.
 
 ```{r}
 # Read commuting data
@@ -235,9 +237,9 @@ This map can be created with the script https://github.com/mtennekes/odf/blob/de
 See an [interactive prototype](http://www.mtennekes.nl/viz/commutingNL/) based on his visualization.
 This version has a couple of new features: 1) it offers views for other parts of the country, 2) it also uses cross-border data (not open data yet), and 3) also the 'stay' population is shown in the doughnuts.
 
-## Example from od package vignette
+## Minimal example
 
-This is a minimal example from the vigentte  of the package `od` (https://github.com/ITSLeeds/od/blob/master/vignettes/od.Rmd)
+This is a minimal example from the vignette  of the package `od` (https://github.com/ITSLeeds/od/blob/master/vignettes/od.Rmd)
 
 ```{r}
 od_data_example = data.frame(
