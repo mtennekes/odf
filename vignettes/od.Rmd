@@ -235,3 +235,37 @@ This map can be created with the script https://github.com/mtennekes/odf/blob/de
 See an [interactive prototype](http://www.mtennekes.nl/viz/commutingNL/) based on his visualization.
 This version has a couple of new features: 1) it offers views for other parts of the country, 2) it also uses cross-border data (not open data yet), and 3) also the 'stay' population is shown in the doughnuts.
 
+## Example from od package vignette
+
+This is a minimal example from the vigentte  of the package `od` (https://github.com/ITSLeeds/od/blob/master/vignettes/od.Rmd)
+
+```{r}
+od_data_example = data.frame(
+  o = "Leeds",
+  d = "London",
+  trips_per_year = 10
+)
+
+p = sf::st_as_sf(
+  data.frame(
+    name = c("Leeds", "London"),
+    lon = c(-1.5, -0.1),
+    lat = c(53.8, 51.5)
+  ),
+  coords = c("lon", "lat"),
+  crs = 4326
+)
+
+x = od(E = od_data_example,
+       U = p,
+       col_orig = "o",
+       col_dest = "d",
+       col_id = "name")
+
+x = od_add_lines(x) # by default a curved line to differentiate opposite directions
+
+tm_shape(x$U) +
+  tm_dots() +
+tm_shape(x$E) +
+  tm_lines()
+```
