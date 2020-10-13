@@ -222,12 +222,16 @@ tm_shape(x_randstad$U) +
   tm_facets(by = "mode", free.coords = FALSE)
 ```
 
-A more sophisticated map using similar data is shown below:
+## Halfline doughnuts
+
+A more sophisticated map using the same data is shown below:
 
 ```{r,echo=FALSE, out.width = "100%"}
-knitr::include_graphics("images/commuting_ODDV_map3_v2.jpg")
+knitr::include_graphics("images/halfline_doughnuts.jpg")
 ```
 
-See an [interactive prototype](http://www.mtennekes.nl/viz/commutingNL/) of this visualization.
+This map can be created with the script https://github.com/mtennekes/odf/blob/demo/NL_commuting/halfline_doughnuts.R
 
+See an [interactive prototype](http://www.mtennekes.nl/viz/commutingNL/) based on his visualization.
+This version has a couple of new features: 1) it offers views for other parts of the country, 2) it also uses cross-border data (not open data yet), and 3) also the 'stay' population is shown in the doughnuts.
 

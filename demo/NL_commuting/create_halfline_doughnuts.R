@@ -1,4 +1,4 @@
-create_oddv_doughnuts <- function(x, highlighted, other = "other", edges_direction = "in", doughnut_type = "out", pal, size_min = 20000, size_max = 250000, doughnut_scale = 1.5, flow_min = 500, flow_max = 20000, flow_scale = 10, view_args = NULL, clip = NULL) {
+create_halfline_doughnuts <- function(x, highlighted, other = "other", edges_direction = "in", doughnut_type = "out", pal, size_min = 20000, size_max = 250000, doughnut_scale = 1.5, flow_min = 500, flow_max = 20000, flow_scale = 10, view_args = NULL) {
   stopifnot(length(pal) == (length(highlighted) + 1L))
   names(pal) <- c(highlighted, other)
 
@@ -58,7 +58,7 @@ create_oddv_doughnuts <- function(x, highlighted, other = "other", edges_directi
   x$E <- x$E %>%
     filter(muni_from != muni_to) %>%
     group_by(muni_from, muni_to) %>%
-    summarize(value = sum(value), show = show[1]) %>%
+    summarize(value = sum(value)) %>%
     ungroup() %>%
     mutate(value = as.integer(value),
            name_from = x$U$name[match(muni_from, x$U$id)],
@@ -121,25 +121,17 @@ create_oddv_doughnuts <- function(x, highlighted, other = "other", edges_directi
   repl <- function(x) ifelse(is.na(x), "n.a.", paste0(x, "%"))
 
   lns <- x$E %>%
-    filter(show) %>%
     mutate(width = pmin(value, flow_max)) %>%
     select(label, value, width, !!sym(edge_class)) %>%
     arrange(desc(value))
   pnts <- x$U %>%
-    filter(show) %>%
-    rename(!!vars) %>%
+    rename(!!vars)
+  attr(pnts, "agr") <- NULL # workaround for a bug(?) in sf
+  pnts <- pnts %>%
     rename(outflow = value_out,
            inflow = value_in) %>%
     mutate_at(names(vars), repl) %>%
     select( !!c("name", "outflow", "inflow", "size", names(vars)))
-
-  # clip
-  if (!is.null(clip)) {
-    clip <- sf::st_transform(clip, 3857)
-    lns <- sf::st_intersection(lns, clip)
-    pnts <- sf::st_intersection(pnts, clip)
-  }
-
 
   set_precision <- function(x, precision = 4) {
     sf::st_geometry(x) <- sf::st_as_sfc(lapply(sf::st_geometry(x), function(y) {
@@ -179,79 +171,3 @@ create_oddv_doughnuts <- function(x, highlighted, other = "other", edges_directi
 }
 
 
-filter_Limburg <- function(x, NL_muni_poly) {
-  LI_muni <- (NL_muni_poly %>%
-    st_drop_geometry() %>%
-    filter(NUTS3_name %in% c("Midden-Limburg", "Noord-Limburg")) %>%
-    select(id))$id
-  NL_muni <- (NL_muni_poly %>%
-                st_drop_geometry() %>%
-                filter(NUTS2_name != "Limburg (NL)") %>%
-                select(id))$id
-
-  x$U <- x$U %>%
-    mutate(id = replace(id, name=="Venlo", "L"),
-           geometry = replace(geometry, name == "Venlo", sf::st_point(c(225000, 450000))),
-           name = replace(name, name=="Venlo", "Limburg (other)")) %>%
-    mutate(id = replace(id, name=="Eindhoven", "NL"),
-           geometry = replace(geometry, name == "Eindhoven", sf::st_point(c(130000, 450000))),
-           name = replace(name, name=="Eindhoven", "Outside Limburg")) %>%
-    mutate(show = !(id %in% c("L", "NL"))) %>%
-    filter(!(id %in% LI_muni), !(id %in% NL_muni))
-
-  x$E <- x$E %>%
-    mutate(muni_from = case_when(muni_from %in% LI_muni ~ "L",
-                                 muni_from %in% NL_muni ~ "NL",
-                                 TRUE ~ muni_from),
-           muni_to = case_when(muni_to %in% LI_muni ~ "L",
-                                 muni_to %in% NL_muni ~ "NL",
-                                 TRUE ~ muni_to)) %>%
-    group_by(muni_from, muni_to, mode) %>%
-    summarize(value = sum(value), show = show[1]) %>%
-    ungroup() %>%
-    mutate(show = !(muni_to %in% c("L", "NL")))
-  x
-}
-
-filter_Noord <- function(x, NL_muni_poly) {
-  GF_muni <- (NL_muni_poly %>%
-                st_drop_geometry() %>%
-                filter(NUTS2_name %in% c("Groningen", "Friesland (NL)", "Drenthe")) %>%
-                select(id))$id
-  OG_muni <- (NL_muni_poly %>%
-                st_drop_geometry() %>%
-                filter(NUTS2_name %in% c("Overijssel", "Gelderland")) %>%
-                select(id))$id
-  NL_muni <- (NL_muni_poly %>%
-                st_drop_geometry() %>%
-                filter(!(NUTS2_name %in% c("Groningen", "Friesland (NL)", "Drenthe", "Overijssel", "Gelderland"))) %>%
-                select(id))$id
-
-
-  x$U <- x$U %>%
-    mutate(id = replace(id, name=="Zwolle", "OG"),
-           geometry = replace(geometry, name == "Zwolle", sf::st_point(c(250000, 400000))),
-           name = replace(name, name=="Zwolle", "Overijssel and Gelderland")) %>%
-    mutate(id = replace(id, name=="Utrecht", "NL"),
-           geometry = replace(geometry, name == "Utrecht", sf::st_point(c(100000, 400000))),
-           name = replace(name, name=="Utrecht", "West and south Netherlands")) %>%
-    mutate(id = replace(id, name=="Eindhoven", "NL2"),
-           geometry = replace(geometry, name == "Eindhoven", sf::st_point(c(-50000, 400000))),
-           name = replace(name, name=="Eindhoven", "West and south Netherlands")) %>%
-    mutate(show = !(id %in% c("OG", "NL", "NL2"))) %>%
-    filter(!(id %in% OG_muni), !(id %in% NL_muni))
-
-  x$E <- x$E %>%
-    mutate(muni_from = case_when(muni_from %in% OG_muni ~ "OG",
-                                 muni_from %in% NL_muni & muni_to != "GM0114" ~ "NL",
-                                 muni_from %in% NL_muni & muni_to == "GM0114" ~ "NL2",
-                                 TRUE ~ muni_from),
-           muni_to = case_when(muni_to %in% OG_muni ~ "OG",
-                               muni_to %in% NL_muni ~ "NL",
-                               TRUE ~ muni_to)) %>%
-    group_by(muni_from, muni_to, mode) %>%
-    summarize(value = sum(value), show = show[1]) %>%
-    ungroup() %>%
-    mutate(show = !(muni_to %in% c("OG", "NL", "NL2")))
-  x
-}
