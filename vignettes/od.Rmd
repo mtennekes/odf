@@ -168,7 +168,7 @@ x_totals = od_add_lines(x_totals)
 Visualizing od data can be done with the `tmap` package:
 
 ```{r}
-library(tmap)
+require("tmap")
 
 tm_shape(x_totals$U) +
   tm_dots() +
@@ -180,7 +180,6 @@ tm_shape(x_totals$E) +
 Below are maps with other default values: straight lines, curved lines and half-lines:
 
 ```{r}
-library(tmap)
 tm = tm_shape(x_totals$U) +
     tm_dots()
 ```
@@ -214,6 +213,7 @@ x_randstad = od_add_lines(x_randstad, angle = 0, range = c(.45, 1), overwrite.ge
 x_randstad$E = x_randstad$E %>% 
   mutate(value_plus_500 = value + 500)
 
+require(tmaptools)
 basemap = tmaptools::read_osm(x_randstad$U)
 
 qtm(basemap, is.master = TRUE) +
@@ -224,7 +224,7 @@ tm_shape(x_randstad$U) +
   tm_facets(by = "mode", free.coords = FALSE)
 ```
 
-## Halfline doughnuts
+## Donut maps
 
 A more sophisticated map using the same data is shown below:
 
@@ -232,9 +232,10 @@ A more sophisticated map using the same data is shown below:
 knitr::include_graphics("images/halfline_doughnuts.jpg")
 ```
 
-This map can be created with the script https://github.com/mtennekes/odf/blob/demo/NL_commuting/halfline_doughnuts.R
+This visualization can be created with the package `donutmaps` (https://github.com/mtennekes/donutmaps), which uses `odf`.
 
-See an [interactive prototype](http://www.mtennekes.nl/viz/commutingNL/) based on his visualization.
+See an [interactive prototype](https://dashboards.cbs.nl/v1/commutingNL/) based on his visualization.
+
 This version has a couple of new features: 1) it offers views for other parts of the country, 2) it also uses cross-border data (not open data yet), and 3) also the 'stay' population is shown in the doughnuts.
 
 ## Minimal example

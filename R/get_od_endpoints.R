@@ -1,4 +1,6 @@
 get_od_endpoints <- function(E, U = NULL) {
+  . = NULL
+  L = NULL
 
   if (!inherits(E, "sf")) stop("Either specify U, or let E be an sf object with lines.")
 

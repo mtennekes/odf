@@ -9,6 +9,11 @@
 #' @param col_id column of U (integer or name) that specifies the id
 #' @export
 #' @import sf
+#' @importFrom stats setNames
+#' @importFrom dplyr group_by slice ungroup transmute as_tibble select n filter sym group_by_at "%>%" rename summarize left_join mutate vars
+#' @importFrom tidyr replace_na
+#' @importFrom utils tail
+#' @importFrom rlang :=
 od <- function(E, U = NULL, col_orig = 1, col_dest = 2, col_id = 1) {
 
   E <- precheck_E(E, col_orig = col_orig, col_dest = col_dest)
